@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kasir Yovie</title>
+    <style>
+      body {
+        font-family: "Segoe UI";
+        background-color: #9293f5;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        width: 20%;
+        margin: 50px auto;
+        border: 1px solid #ccc;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Media query untuk tampilan desktop */
+      @media (min-width: 768px) {
+        .container {
+          width: 20%;
+        }
+      }
+
+      /* Media query untuk tampilan perangkat selain desktop */
+      @media (max-width: 767px) {
+        .container {
+          width: 80%;
+        }
+      }
+
+      h2 {
+        color: #333;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      select,
+      input[type="number"],
+      button {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      p {
+        margin: 5px 0;
+      }
+
+      button {
+        background-color: #9293f5;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #9293f5;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Menu Makanan</h2>
+      <label for="makanan">Pilih Makanan:</label>
+      <select id="makanan" onchange="tampilkanHarga('makanan')">
+        <option value="">Pilih Makanan</option>
+        <option value="nasi-goreng">Nasi Goreng</option>
+        <option value="mie-ayam">Mie Ayam</option>
+        <option value="nasi-pecel">Nasi Pecel</option>
+        <option value="nasi-lele">Nasi Lele</option>
+      </select>
+      <label for="jumlah-makanan">Jumlah:</label>
+      <input
+        type="number"
+        id="jumlah-makanan"
+        min="1"
+        value="1"
+        onchange="tampilkanHarga('makanan')"
+      />
+      <p id="harga-makanan"></p>
+
+      <h2>Menu Minuman</h2>
+      <label for="minuman">Pilih Minuman:</label>
+      <select id="minuman" onchange="tampilkanHarga('minuman')">
+        <option value="">Pilih Minuman</option>
+        <option value="es-teh">Es Teh</option>
+        <option value="es-jeruk">Es Jeruk</option>
+      </select>
+      <label for="jumlah-minuman">Jumlah:</label>
+      <input
+        type="number"
+        id="jumlah-minuman"
+        min="1"
+        value="1"
+        onchange="tampilkanHarga('minuman')"
+      />
+      <p id="harga-minuman"></p>
+
+      <h2>Total Pesanan</h2>
+      <p id="total"></p>
+
+      <h2>Pembayaran</h2>
+      <label for="uang-dibayar">Uang yang Dibayar:</label>
+      <input
+        type="number"
+        id="uang-dibayar"
+        min="0"
+        oninput="updateKembalian()"
+      />
+      <p id="kembalian"></p>
+
+      <button onclick="bayar()">Bayar</button>
+      <button onclick="cetak()">Cetak</button>
+    </div>
+
+    <script>
+      var pesanan = {
+        makanan: {},
+        minuman: {},
+      };
+
+      function tampilkanHarga(jenis) {
+        const menuSelect = document.getElementById(jenis);
+        const jumlahInput = document.getElementById("jumlah-" + jenis);
+        const hargaId = "harga-" + jenis;
+        const hargaElement = document.getElementById(hargaId);
+        let hargaText = "";
+
+        switch (menuSelect.value) {
+          case "nasi-goreng":
+            pesanan.makanan["nasi-goreng"] = jumlahInput.value;
+            hargaText =
+              "Harga Nasi Goreng: Rp. " +
+              formatUang(getHargaMakanan("nasi-goreng"));
+            break;
+          case "mie-ayam":
+            pesanan.makanan["mie-ayam"] = jumlahInput.value;
+            hargaText =
+              "Harga Mie Ayam: Rp. " + formatUang(getHargaMakanan("mie-ayam"));
+            break;
+          case "nasi-pecel":
+            pesanan.makanan["nasi-pecel"] = jumlahInput.value;
+            hargaText =
+              "Harga Nasi Pecel: Rp. " +
+              formatUang(getHargaMakanan("nasi-pecel"));
+            break;
+          case "nasi-lele":
+            pesanan.makanan["nasi-lele"] = jumlahInput.value;
+            hargaText =
+              "Harga Nasi Lele: Rp. " +
+              formatUang(getHargaMakanan("nasi-lele"));
+            break;
+          case "es-teh":
+            pesanan.minuman["es-teh"] = jumlahInput.value;
+            hargaText =
+              "Harga Es Teh: Rp. " + formatUang(getHargaMinuman("es-teh"));
+            break;
+          case "es-jeruk":
+            pesanan.minuman["es-jeruk"] = jumlahInput.value;
+            hargaText =
+              "Harga Es Jeruk: Rp. " + formatUang(getHargaMinuman("es-jeruk"));
+            break;
+          default:
+            hargaText = "";
+        }
+
+        hargaElement.innerHTML = hargaText;
+        updateTotal();
+      }
+
+      function updateTotal() {
+        var totalHarga = 0;
+
+        for (var makanan in pesanan.makanan) {
+          totalHarga += pesanan.makanan[makanan] * getHargaMakanan(makanan);
+        }
+
+        for (var minuman in pesanan.minuman) {
+          totalHarga += pesanan.minuman[minuman] * getHargaMinuman(minuman);
+        }
+
+        document.getElementById("total").innerHTML =
+          "Total Harga: Rp. " + formatUang(totalHarga);
+      }
+
+      function updateKembalian() {
+        var totalHarga = 0;
+
+        for (var makanan in pesanan.makanan) {
+          totalHarga += pesanan.makanan[makanan] * getHargaMakanan(makanan);
+        }
+
+        for (var minuman in pesanan.minuman) {
+          totalHarga += pesanan.minuman[minuman] * getHargaMinuman(minuman);
+        }
+
+        var uangDibayar = document.getElementById("uang-dibayar").value;
+        var kembalian = uangDibayar - totalHarga;
+
+        if (uangDibayar === "") {
+          document.getElementById("kembalian").innerHTML = "";
+        } else if (kembalian >= 0) {
+          document.getElementById("kembalian").innerHTML =
+            "Kembalian: Rp. " + formatUang(kembalian);
+        } else {
+          document.getElementById("kembalian").innerHTML =
+            "Uang yang dibayar tidak mencukupi";
+        }
+      }
+
+      function bayar() {
+        var totalHarga = 0;
+
+        for (var makanan in pesanan.makanan) {
+          totalHarga += pesanan.makanan[makanan] * getHargaMakanan(makanan);
+        }
+
+        for (var minuman in pesanan.minuman) {
+          totalHarga += pesanan.minuman[minuman] * getHargaMinuman(minuman);
+        }
+
+        var uangDibayar = document.getElementById("uang-dibayar").value;
+        var kembalian = uangDibayar - totalHarga;
+
+        if (uangDibayar === "") {
+          document.getElementById("kembalian").innerHTML =
+            "Silakan masukkan jumlah uang yang dibayar.";
+        } else if (kembalian >= 0) {
+          document.getElementById("kembalian").innerHTML =
+            "Kembalian: Rp. " + formatUang(kembalian);
+          alert(
+            "Pembayaran berhasil. Kembalian Anda: Rp. " + formatUang(kembalian)
+          );
+        } else {
+          document.getElementById("kembalian").innerHTML =
+            "Uang yang dibayar tidak mencukupi";
+        }
+      }
+
+      function formatUang(amount) {
+        return amount.toLocaleString("id-ID");
+      }
+
+      function getHargaMakanan(makanan) {
+        switch (makanan) {
+          case "nasi-goreng":
+            return 15000;
+          case "mie-ayam":
+            return 12000;
+          case "nasi-pecel": // Menambahkan harga untuk nasi pecel
+            return 10000;
+          case "nasi-lele": // Menambahkan harga untuk nasi lele
+            return 20000;
+          default:
+            return 0;
+        }
+      }
+
+      function getHargaMinuman(minuman) {
+        switch (minuman) {
+          case "es-teh":
+            return 5000;
+          case "es-jeruk":
+            return 6000;
+          default:
+            return 0;
+        }
+      }
+
+      function cetak() {
+        var printContent = "<div class='container'>";
+        printContent += "<h2>Pesanan Anda:</h2>";
+        printContent += "<ul>";
+
+        // Menambahkan pesanan makanan ke konten cetak
+        for (var makanan in pesanan.makanan) {
+          printContent +=
+            "<li>" +
+            makanan +
+            " (x" +
+            pesanan.makanan[makanan] +
+            "): Rp. " +
+            formatUang(pesanan.makanan[makanan] * getHargaMakanan(makanan)) +
+            "</li>";
+        }
+
+        // Menambahkan pesanan minuman ke konten cetak
+        for (var minuman in pesanan.minuman) {
+          printContent +=
+            "<li>" +
+            minuman +
+            " (x" +
+            pesanan.minuman[minuman] +
+            "): Rp. " +
+            formatUang(pesanan.minuman[minuman] * getHargaMinuman(minuman)) +
+            "</li>";
+        }
+
+        printContent += "</ul>";
+
+        var totalHarga = 0;
+
+        // Menghitung total harga pesanan
+        for (var makanan in pesanan.makanan) {
+          totalHarga += pesanan.makanan[makanan] * getHargaMakanan(makanan);
+        }
+
+        for (var minuman in pesanan.minuman) {
+          totalHarga += pesanan.minuman[minuman] * getHargaMinuman(minuman);
+        }
+
+        // Menambahkan total harga ke konten cetak
+        printContent += "<h2>Total Harga:</h2>";
+        printContent +=
+          "<p>Total Harga: Rp. " + formatUang(totalHarga) + "</p>";
+        printContent += "</div>";
+
+        var printWindow = window.open("", "_blank", "width=600,height=600");
+        printWindow.document.open();
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+
+        resetForm();
+      }
+
+      function resetForm() {
+        // Mengosongkan nilai input
+        document.getElementById("makanan").value = "";
+        document.getElementById("jumlah-makanan").value = "1";
+        document.getElementById("harga-makanan").innerHTML = "";
+        document.getElementById("minuman").value = "";
+        document.getElementById("jumlah-minuman").value = "1";
+        document.getElementById("harga-minuman").innerHTML = "";
+        document.getElementById("total").innerHTML = "";
+        document.getElementById("uang-dibayar").value = "";
+        document.getElementById("kembalian").innerHTML = "";
+
+        // Mengosongkan nilai pesanan
+        pesanan.makanan = {};
+        pesanan.minuman = {};
+      }
+    </script>
+  </body>
+</html>
